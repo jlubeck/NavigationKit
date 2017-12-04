@@ -58,9 +58,6 @@
         case NavigationKitDirectionsServiceAppleMaps:
             [self calculateDirectionsAppleMaps];
             break;
-        case NavigationKitDirectionsServiceGoogleMaps:
-            [self calculateDirectionsGoogleMaps];
-            break;
         default:
         {
             NSDictionary *userInfo = @{
@@ -196,65 +193,6 @@
 }
 
 #pragma mark - The inner workings (Math, Algorithms, Easy)
-
-- (void)calculateDirectionsGoogleMaps {
-    
-    NSString *mode = @"driving";
-    if(_transportType == MKDirectionsTransportTypeWalking)
-        mode = @"walking";
-    
-    NSString *requestURL = [NSString stringWithFormat:@"http://maps.googleapis.com/maps/api/directions/json?origin=%f,%f&destination=%f,%f&sensor=true&mode=%@&language=%@",
-                            _source.latitude,
-                            _source.longitude,
-                            _destination.latitude,
-                            _destination.longitude,
-                            mode,
-                            [[NSLocale currentLocale] objectForKey:NSLocaleLanguageCode]];
-    
-    NSURL *url = [NSURL URLWithString:[requestURL stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-    NSURLRequest *request = [NSURLRequest requestWithURL:url];
-    
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-        
-        NSError *error = nil;
-        
-        NSDictionary *result = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-        if(error) {
-            if([delegate respondsToSelector:@selector(navigationKitError:)])
-                [delegate navigationKitError:error];
-            return;
-        }
-        
-        NSArray *routes = [result objectForKey:@"routes"];
-        if(!routes) {
-            if([delegate respondsToSelector:@selector(navigationKitError:)]) {
-                NSDictionary *userInfo = @{
-                                           NSLocalizedDescriptionKey: NSLocalizedString(@"Operation was unsuccessful.", nil),
-                                           NSLocalizedFailureReasonErrorKey: NSLocalizedString(@"Could not find any routes for specified locations", nil)
-                                           };
-                [delegate navigationKitError:[NSError errorWithDomain:NavigationKitErrorDomain code:-2 userInfo:userInfo]];
-            }
-            return;
-        }
-        
-        NSDictionary *route = [routes firstObject];
-        if(!route) {
-            if([delegate respondsToSelector:@selector(navigationKitError:)]) {
-                NSDictionary *userInfo = @{
-                                           NSLocalizedDescriptionKey: NSLocalizedString(@"Operation was unsuccessful.", nil),
-                                           NSLocalizedFailureReasonErrorKey: NSLocalizedString(@"Could not find any routes for specified locations", nil)
-                                           };
-                [delegate navigationKitError:[NSError errorWithDomain:NavigationKitErrorDomain code:-2 userInfo:userInfo]];
-            }
-            return;
-        }
-        
-        _route = [[NKRoute alloc] initWithGoogleMapsRoute:route];
-        
-        if([delegate respondsToSelector:@selector(navigationKitCalculatedRoute:)])
-            [delegate navigationKitCalculatedRoute:_route];
-    }];
-}
 
 - (void)calculateDirectionsAppleMaps {
     

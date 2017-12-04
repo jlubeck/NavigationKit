@@ -10,52 +10,10 @@
 
 @implementation NKRouteStep
 
-- (id)initWithGoogleMapsStep:(NSDictionary *)step {
-    self = [super init];
-    
-    if(self) {
-        NSString *encodedPolyline = [[step valueForKey:@"polyline"] valueForKey:@"points"];
-        
-        self.path = [GMSPath pathFromEncodedPath:encodedPolyline];
-        
-        CLLocationCoordinate2D *coordinates = calloc([self.path count], sizeof(CLLocationCoordinate2D));
-        
-        for(int i = 0; i < [self.path count]; i++) {
-            coordinates[i] = [self.path coordinateAtIndex:i];
-        }
-        
-        self.polyline = [MKPolyline polylineWithCoordinates:coordinates count:[self.path count]];
-        
-        free(coordinates);
-        
-        self.instructions = [step valueForKey:@"html_instructions"];
-        self.distance = [[[step valueForKey:@"distance"] valueForKey:@"value"] doubleValue];
-        if([[step valueForKey:@"travel_mode"] isEqualToString:@"DRIVING"])
-            self.transportType = MKDirectionsTransportTypeAutomobile;
-        
-        self.maneuver = [self maneuver:[step valueForKey:@"maneuver"]];
-    }
-    
-    return self;
-}
-
 - (id)initWithMKRouteStep:(MKRouteStep *)step {
     self = [super init];
     
     if(self && step) {
-        
-        // Convert polyline to GMSPath
-        NSInteger stepPoints = step.polyline.pointCount;
-        CLLocationCoordinate2D *coordinates = malloc(stepPoints * sizeof(CLLocationCoordinate2D));
-        [step.polyline getCoordinates:coordinates range:NSMakeRange(0, stepPoints)];
-        
-        GMSMutablePath *stepGMSPath = [[GMSMutablePath alloc] init];
-        for(int i = 0; i < stepPoints; i++) {
-            [stepGMSPath addCoordinate:coordinates[i]];
-        }
-        self.path = stepGMSPath;
-        free(coordinates);
-        
         // Save polyline
         self.polyline = [step polyline];
         
